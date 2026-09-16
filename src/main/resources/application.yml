@@ -1,0 +1,52 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/inventory_db
+    username: postgres
+    password: secret
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate.format_sql: true
+
+  # ---------------------------------------------------------------
+  # Redis: backs BOTH @Cacheable and @DistributedLock.
+  # Start it with: docker compose up -d
+  # ---------------------------------------------------------------
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      # Fail fast. A cache that hangs for 30s is worse than no cache at all:
+      # our CacheErrorHandler is fail-open, so a 500ms timeout degrades to a
+      # database hit instead of freezing the request thread.
+      timeout: 500ms
+      connect-timeout: 1s
+      lettuce:
+        pool:
+          enabled: true
+          max-active: 16
+          max-idle: 8
+          min-idle: 2
+
+  cache:
+    # Explicit beats auto-detection: if Redis is missing we want a startup
+    # failure, not a silent fallback to an in-memory ConcurrentMapCache that
+    # would make every distributed-cache lesson in this project meaningless.
+    type: redis
+
+server:
+  port: 8080
+
+logging:
+  level:
+    # TRACE prints every cache lookup, hit, miss and eviction. This single line
+    # is the best teaching tool in the file - keep it on while you experiment.
+    org.springframework.cache: TRACE
+    # Retry attempts and backoff decisions from the native Spring 7 retry support.
+    org.springframework.resilience: DEBUG
+    com.yourname.inventory.common.lock: DEBUG
+    com.yourname.inventory.stock: DEBUG
+    com.yourname.inventory.supplier: DEBUG
+    com.yourname.inventory.catalog: DEBUG

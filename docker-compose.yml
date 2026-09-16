@@ -1,0 +1,42 @@
+# Infrastructure for the caching / retry / locking lessons.
+#   docker compose up -d
+#   docker compose down -v      (wipes both volumes for a clean slate)
+services:
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: inventory-postgres
+    environment:
+      POSTGRES_DB: inventory_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d inventory_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: inventory-redis
+    ports:
+      - "6379:6379"
+    # appendonly keeps data across restarts. For a pure cache you would not
+    # bother, but our distributed locks live here too and losing them all at
+    # once is a good way to learn why lock TTLs exist.
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
+  redisdata:
