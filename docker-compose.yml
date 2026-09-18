@@ -20,6 +20,23 @@ services:
       timeout: 3s
       retries: 10
 
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: inventory-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@inventory.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      # Skips the master-password prompt on every login - fine for a local
+      # learning box, never do this on anything reachable from outside.
+      PGADMIN_CONFIG_SERVER_MODE: "True"
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmindata:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   redis:
     image: redis:7-alpine
     container_name: inventory-redis
@@ -38,5 +55,6 @@ services:
       retries: 10
 
 volumes:
+  pgadmindata:
   pgdata:
   redisdata:

@@ -1,5 +1,4 @@
-# LEARNING.md — Redis caching, @Retryable and distributed locks
-
+admin
 A guided tour of this project. Every section is: **the idea → the code → a curl you can run → what to look for.**
 
 Keep a second terminal open on the application log the whole time. Most of the lessons here are
